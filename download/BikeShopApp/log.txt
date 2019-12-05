@@ -1,0 +1,2 @@
+try scanner read in doesn't loop like expected --> fixed by adding empty readIn.nextLine() to catch newline character
+read all from database not printing anything --> fixed, wasn't adding to object array correctly
