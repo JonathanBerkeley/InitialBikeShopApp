@@ -3,6 +3,7 @@ package MainPackage;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -21,7 +22,7 @@ public class MainTableGateway {
     private static final String COLUMN_BRAKE_TYPE = "braketype";
     private static final String COLUMN_COLOUR = "colour";
     private static final String COLUMN_PRICE = "price";
-    private Connection mConnection;
+    private final Connection mConnection;
 
     public MainTableGateway(Connection connection) {
         mConnection = connection;
@@ -136,6 +137,7 @@ public class MainTableGateway {
 
     public List<BikeObj> customSQLEngine(String userSQL) throws SQLException {
         try {
+            boolean getAll = false;
             int columnCount = 0;
             Statement stmt = this.mConnection.createStatement();
             userSQL = userSQL.toLowerCase(); //Set to lowercase for later comparison
@@ -144,26 +146,29 @@ public class MainTableGateway {
             for (int x = 0; x < columnCompare.length; ++x) {
                 if (userSQL.contains(columnCompare[x].toLowerCase())) {
                     ++columnCount;
+                } else if (userSQL.contains("select * from")) {
+                    getAll = true;
                 }
             }
-            if(columnCount > 1)
-                System.out.println("Multiple columns currently unsupported.");
             String chkQueryOrUpdate[] = userSQL.split(" ", 2); //Splits userSQL at the first space
-            /*
-            String chkColumn[] = chkQueryOrUpdate[1].split(",", columnCount); //Splits userSQL for column
-            String chkColumnFinal[] = chkColumn[columnCount-1].split(" f", 2);
-            String chkTable[] = chkColumn[columnCount-1].split("m ", 2);
-            System.out.println("CC: " + columnCount + " chk: " + chkColumn[0]+" chk: " + chkColumn[1]+" chk: " + chkColumnFinal[0] + " chkTable: " + chkTable[1]);
-            */
             if (chkQueryOrUpdate[0].equals("select")) { //Checks if it's a query or an update
-                stmt.executeQuery(userSQL);
                 ResultSet rs = stmt.executeQuery(userSQL);
-                List<BikeObj> cBikeObjsL = formatResultSet(rs); //Gets and formats results of query
-                return cBikeObjsL;
+                if (getAll) {
+                    List<BikeObj> cBikeObjsL = formatResultSet(rs); //Gets and formats results of query
+                    return cBikeObjsL;
+                } else {
+                    List<BikeObj> cBikeObjsL2 = formatCustomSet(rs, columnCompare);
+                    return cBikeObjsL2;
+                }
             } else {
-                stmt.executeUpdate(userSQL); //Executes user update
+                int success = stmt.executeUpdate(userSQL); //Executes user update
                 ResultSet rs = stmt.executeQuery("SELECT * FROM " + TABLE_NAME);
                 List<BikeObj> cBikeObjsL = formatResultSet(rs);
+                if (success > 0) {
+                    System.out.println("Successful update");
+                } else {
+                    System.out.println("Update didn't change any existing rows");
+                }
                 return cBikeObjsL; //Returns all table info after update performed
             }
         } catch (SQLException ex) {
@@ -276,13 +281,18 @@ public class MainTableGateway {
 
     private List<BikeObj> formatCustomSet(ResultSet rs, String[] column) throws SQLException {
         List<BikeObj> iBikeObjsL = new ArrayList<>();
-        String qResult;
-        int colCount = 0;
         BikeObj b;
+        String[] vars = new String[column.length];
         try {
             while (rs.next()) {
-                qResult = rs.getString(rs.findColumn(column[colCount]));
-                b = new BikeObj(qResult);
+                for (int i = 0; i < vars.length; i++) {
+                    try {
+                        vars[i] = rs.getString(rs.findColumn(column[i]));
+                    } catch (Exception ix) {
+                        vars[i] = "";
+                    }
+                }
+                b = new BikeObj(vars[0], vars[1], vars[2],  vars[3],  vars[4],  vars[5],  vars[6],  vars[7],  vars[8],  vars[9]);
                 iBikeObjsL.add(b);
             }
             return iBikeObjsL;
