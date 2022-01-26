@@ -16,11 +16,11 @@ public class DBConnection {
         user = "root";
         password = "";
         try {
-        if (sConnection == null || sConnection.isClosed()) {
-            String url = "jdbc:mysql://" + host + "/" + db;
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            sConnection = DriverManager.getConnection(url, user, password);
-        }
+            if (sConnection == null || sConnection.isClosed()) {
+                String url = "jdbc:mysql://" + host + "/" + db;
+                Class.forName("com.mysql.cj.jdbc.Driver");
+                sConnection = DriverManager.getConnection(url, user, password);
+            }
         } catch (SQLException ex){
             if(Meta.debug)
                 System.out.println("-Debug- Exception caught in DBConnection: " + ex);
